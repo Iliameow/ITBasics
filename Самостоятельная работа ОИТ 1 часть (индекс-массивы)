@@ -1,0 +1,655 @@
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <windows.h>
+#include "Самостоятельная работа ОИТ.h"
+using namespace std;
+
+// Структура данных
+struct FigureSkating
+{
+	string surname; // фамилия
+	string name; // имя
+	string country; // страна, от которой выступает фигуристка
+	unsigned int age; // возраст
+	double shortProgramRate; // баллы за короткую программу
+	double freeScatingRate; // баллы за произвольную программу
+};
+
+// Структура данных для индекса массива по возрасту
+struct SkaterOnAge
+{
+	unsigned int SkaterAge; // индексация по возрасту
+	unsigned __int8 FullNum; // номер записи в исходном массиве с полными данными
+};
+
+// Структура данных для индекса массива по итоговой сумме баллов фигуриста
+struct SkaterOnSummRate
+{
+	double SkaterSummRate; // индексация по итоговой сумме баллов
+	unsigned __int8 FullNum; // номер записи в исходном массиве с полными данными
+};
+
+// Ввод целого числа
+int IntInput(string welcome, string error, string outOfRangeError = "Выберите меньшее число!")
+{
+	string strInput;
+	int intInput;
+	cout << welcome << endl;
+	cin >> strInput;
+	// Переменная для проверки корректности введённого числа для выполнения цикла 
+	bool test = false;
+	while (!test) {
+		stringstream ss(strInput); 
+		// Пишем таким образом, учитывая особенность функции ss проверять возможность перевода типа и записи в переменную, пока может конвертировать тип
+		char nextElem;
+		// Преобразуем строку в int(вернёт true - если число, false - если нечисло)
+		if (ss >> intInput && intInput >= 0) { 
+			// Проверяем элемент, следующий за прочитанным числом, если его нет, то в строке только число, если есть, то помимо числа есть другие символы, а значит, ввод не корректный
+			if (!(ss >> nextElem)) {
+				// Число введено корректно
+				test = true;
+				break;
+			}
+			else {
+				cout << error << " " << welcome << endl;
+				cin >> strInput;
+			}
+		}
+		else {
+			cout << error << " " << welcome << endl;
+			cin >> strInput;
+		}
+	}
+	return intInput;
+}
+
+// Ввод вещественного числа
+double DoubleInput(string welcome, string error, string outOfRangeError = "Выберите меньшее число!")
+{
+	string strInput;
+	double doubleInput;
+	cout << welcome << endl;
+	cin >> strInput;
+	// Переменная для проверки корректности введённого числа для выполнения цикла
+	bool test = false;
+	while (!test) {
+		stringstream ss(strInput);
+		// Пишем, учитывая особенность функции ss проверять возможность перевода типа и записи в переменную, пока может конвертировать тип
+		char nextElem;
+		// Преобразуем строку в double (вернёт true - если число, false - если нечисло)
+		if (ss >> doubleInput) {
+			// Проверяем элемент, следующий за прочитанным числом, если его нет, то в строке только число, если есть, то помимо числа есть другие символы, а значит, ввод не корректный
+			if (!(ss >> nextElem)) {
+				test = true;
+				break;
+			}
+			else {
+				cout << error << " " << welcome << endl;
+				cin >> strInput;
+			}
+		}
+		else {
+			cout << error << " " << welcome << endl;
+			cin >> strInput;
+		}
+	}
+	return doubleInput;
+}
+
+// Ввод строки
+string StrInput(string welcome)
+{
+	string strInput;
+	cout << welcome << endl;
+	cin >> strInput;
+	return strInput;
+}
+
+// Ввод структуры
+FigureSkating StructureInput() 
+{
+	FigureSkating participant;
+	cout << "Введите данные фигуристки." << endl;
+	participant.name = StrInput("Введите имя фигуристки.");
+	participant.surname = StrInput("Введите фамилию фигуристки.");
+	participant.country = StrInput("Введите страну, которую представляет фигуристка.");
+	participant.age = IntInput("Введите возраст фигуристки (полных лет).", "Неправильный ввод!");;
+	participant.shortProgramRate = DoubleInput("Введите баллы за короткую программу.", "Неправильный ввод!");
+	participant.freeScatingRate = DoubleInput("Введите баллы за произвольную программу.", "Неправильный ввод!");
+	return participant;
+}
+
+// Ввод данных с клавиатуры в массив записей
+FigureSkating* ArrayConsoleInput(int records) {
+	// Создание массива структур данных
+	FigureSkating* arr = new FigureSkating[records];
+	for (int i = 0; i < records; i++) {
+		arr[i] = StructureInput();
+	}
+	return arr;
+}
+
+// Добавление записи в массив записей
+FigureSkating* AddRecord(FigureSkating participant, FigureSkating* arr, int &records)
+{
+	FigureSkating* newArray = new FigureSkating[records + 1];
+	for (int i = 0; i < records; i++) {
+		newArray[i] = arr[i];
+	}
+	newArray[records] = participant;
+	records++;
+	return newArray;
+}
+
+// Ввод данных из файла
+void ReadFile(FigureSkating* &arr, int &records)
+{
+	ofstream OutFile;
+	string FileName = StrInput("Введите имя файла:");
+	// Открываем файл для записи, связав его с файлом на внешнем запоминающем устройсте:
+	ifstream InFile(FileName);
+	// Строка для ввода (считывания) строк текста из файла
+	string InLineVar;
+	// Переменная для нумерации строк, считанных из файла
+	int SN = 0;
+	// Проверяем, удалось ли открыть файл, если удалось, считываем из него в цикле текстовые строки и выводим в консоль:
+	if (InFile.is_open())
+	{
+		while (getline(InFile, InLineVar))
+		{
+			SN++;
+			cout << "Считывание строки: " << InLineVar << endl;
+			// Выделяем номер строки и текст (через разделитель -) и записываем данные без номера строки в массив записей
+			int SymbPosition = InLineVar.find("-", 1);
+			// Служебный массив строк, для считывания записи по полям через пробел
+			string* helpArr = new string[6];
+			// Записываем поток из записи
+			istringstream iss(InLineVar.substr(SymbPosition + 2));
+			for (int i = 0; i < 6; i++) {
+				// на каждое место в массиве записываем по одному полю записи, разделяя их по пробелам
+				iss >> helpArr[i];
+			}
+			// Переписываем данные в структуру FigureSkating
+			FigureSkating participant;
+			participant.name = helpArr[0];
+			participant.surname = helpArr[1];
+			participant.country = helpArr[2];
+			participant.age = stoi(helpArr[3]);
+			participant.shortProgramRate = stod(helpArr[4]);
+			participant.freeScatingRate = stod(helpArr[5]);
+			// Добавление новой записи в массив записей, переданный в функцию по ссылке
+			arr = AddRecord(participant, arr, records);
+		}
+		InFile.close();
+		cout << SN << " Данные успешно считаны." << endl;
+	}
+	else
+	{
+		cout << "Не удалось прочитать данные из файла!" << endl;
+	}
+}
+
+// Создать новый файл
+void CreateNewFile()
+{
+	ofstream OutFile;
+	string FileName = StrInput("Введите имя файла:");
+	OutFile.open(FileName);
+	FigureSkating WS;
+	int SN = 0;
+	if (OutFile.is_open())
+	{
+		do
+		{
+			// Вводим запись
+			cout << "Введите данные фигуристки." << endl;
+			WS.name = StrInput("Введите имя фигуристки. (Введите \"-\" для завершения ввода).");
+			if (WS.name == "-") {
+				break;
+			}
+			WS.surname = StrInput("Введите фамилию фигуристки.");
+			WS.country = StrInput("Введите страну, которую представляет фигуристка.");
+			WS.age = IntInput("Введите возраст фигуристки (полных лет).", "Неправильный ввод!");;
+			WS.shortProgramRate = DoubleInput("Введите баллы за короткую программу.", "Неправильный ввод!");
+			WS.freeScatingRate = DoubleInput("Введите баллы за произвольную программу.", "Неправильный ввод!");
+			SN++;
+			OutFile << SN << " - " << WS.name << " " << WS.surname << " " << WS.country << " " << WS.age << " " << WS.shortProgramRate << " " << WS.freeScatingRate << endl;
+		} while (WS.name != "-"); // Вводим, пока не будет введена строка "-"
+		OutFile.close();
+		cout << "Файл был успешно перезаписан - " << SN << " строк." << endl;
+	}
+	else
+	{
+		cout << "Файл не был перезаписан!" << endl;
+	}
+}
+
+// Добавить информацию в файл
+void AddToFile() 
+{
+	ofstream OutFile;
+	string FileName = StrInput("Введите имя файла:");
+	// Открываем файл для добавления записи в конец файла (режим ios::app), связав его с файлом на внешнем запоминающем устройсте:
+	OutFile.open(FileName, ios::app);
+	// Строка для ввода текста для заполнения файла
+	FigureSkating WS;
+	// Переменная для нумерации строк
+	int SN = 0;
+	if (OutFile.is_open())
+	{
+		do
+		{
+			// Вводим запись
+			cout << "Введите данные фигуристки." << endl;
+			WS.name = StrInput("Введите имя фигуристки. (Введите \"-\" для завершения ввода).");
+			if (WS.name == "-") {
+				break;
+			}
+			WS.surname = StrInput("Введите фамилию фигуристки.");
+			WS.country = StrInput("Введите страну, которую представляет фигуристка.");
+			WS.age = IntInput("Введите возраст фигуристки (полных лет).", "Неправильный ввод!");;
+			WS.shortProgramRate = DoubleInput("Введите баллы за короткую программу.", "Неправильный ввод!");
+			WS.freeScatingRate = DoubleInput("Введите баллы за произвольную программу.", "Неправильный ввод!");
+			SN++;
+			OutFile << SN << " - " << WS.name << " " << WS.surname << " " << WS.country << " " << WS.age << " " << WS.shortProgramRate << " " << WS.freeScatingRate << endl;
+		} while (WS.name != "-"); // Вводим, пока не будет введена строка "-"
+		OutFile.close();
+		cout << "Файл был успешно перезаписан - " << SN << " строк." << endl;
+	}
+	else
+	{
+		cout << "Файл не был перезаписан!" << endl;
+	}
+}
+
+// Построения индекса массива по значениям заданного атрибута записей в массиве (age)
+SkaterOnAge* IndexArrayGivenAge(FigureSkating* arr, int records)
+{
+	SkaterOnAge* indexArray = new SkaterOnAge[records];
+	for (int i = 0; i < records; i++) {
+		indexArray[i].SkaterAge = arr[i].age;
+		indexArray[i].FullNum = i;
+	}
+	return indexArray;
+}
+
+// Построение индекса массива по значениям вычисленного поля на основе атрибутов записей в массиве (Общая сумма баллов за короткую и произвольную программы)
+SkaterOnSummRate* IndexArrayCountSummRate(FigureSkating* arr, int records)
+{
+	SkaterOnSummRate* indexArray = new SkaterOnSummRate[records];
+	for (int i = 0; i < records; i++) {
+		indexArray[i].SkaterSummRate = arr[i].shortProgramRate + arr[i].freeScatingRate;
+		indexArray[i].FullNum = i;
+	}
+	return indexArray;
+}
+
+// Сортировка индекса массива по возрастанию значений ключевых полей (невычислимый атрибут - age)
+SkaterOnAge* IncreasingValueBubbleSortIndexArrayGivenAge(SkaterOnAge* indexArray, int records)
+{
+	bool flg; // флаг для проверки отсортированности массива на каждом шаге, для ускорения работы в некоторых ситуациях
+	int value; // вспомогательная переменная для обмена элементов местами
+	int index; // вспомогательная переменная для обмена индексов местами
+	for (int i = 0; i < records - 1; i++) {
+		flg = true;
+		for (int j = 0; j < records - i - 1; j++) {
+			if (indexArray[j].SkaterAge > indexArray[j + 1].SkaterAge) {
+				value = indexArray[j + 1].SkaterAge;
+				index = indexArray[j + 1].FullNum;
+				indexArray[j + 1].SkaterAge = indexArray[j].SkaterAge;
+				indexArray[j + 1].FullNum = indexArray[j].FullNum;
+				indexArray[j].SkaterAge = value;
+				indexArray[j].FullNum = index;
+				flg = false;
+			}
+		}
+		// Если не было произведено ни одного обмена за итерацию, значит, массив отсортирован
+		if (flg) {
+			break;
+		}
+	}
+	return indexArray;
+}
+
+// Сортировка индекса массива по убыванию значений ключевых полей (Вычислимый атрибут - общая сумма баллов за короткую и произвольную программы)
+SkaterOnSummRate* DecreasingValueImplementationSortIndexArrayCountSummRate(SkaterOnSummRate* indexArray, int records)
+{
+	int maxValue; // переменная для хранения значения текущего максимального элемента
+	int value; // вспомогательная переменная для обмена элементов местами
+	int index; // вспомогательная переменная для обмена индексов местами
+	for (int i = 0; i < records - 1; i++) {
+		maxValue = i;
+		for (int j = i + 1; j < records; j++) {
+			if (indexArray[j].SkaterSummRate > indexArray[maxValue].SkaterSummRate) {
+				maxValue = j;
+			}
+		}
+		if (maxValue != i) {
+			value = indexArray[maxValue].SkaterSummRate;
+			index = indexArray[maxValue].FullNum;
+			indexArray[maxValue].SkaterSummRate = indexArray[i].SkaterSummRate;
+			indexArray[maxValue].FullNum = indexArray[i].FullNum;
+			indexArray[i].SkaterSummRate = value;
+			indexArray[i].FullNum = index;
+		}
+	}
+	return indexArray;
+}
+
+// Вывод данных о фигуристе в консоль
+void Print(FigureSkating participant)
+{
+	cout << participant.name << "   |   " << participant.surname << "   |   " << participant.country << "   | " << participant.age << " лет |   " << participant.shortProgramRate << "   |   " << participant.freeScatingRate << endl;
+}
+
+// Вывод отсортированного (при помощи индекс-массивов) массива с данными о фигуристах в консоль
+void PrintSortedByAge(FigureSkating* arr, SkaterOnAge* indexArray, int records)
+{
+	cout << "Массив, отсортированный по возрасту от младших к старшим." << endl;
+	cout << "Имя" << "   |   " << "Фамилия" << "   |   " << "Страна" << "   |   " << "Возраст" << "   |   " << "Короткая программа" << "   |   " << "Произвольная программа" << endl;
+	for (int i = 0; i < records; i++) {
+		Print(arr[indexArray[i].FullNum]);
+	}
+}
+
+// Вывод отсортированного (при помощи индекс-массивов) массива с данными о фигуристах в консоль
+void PrintSortedBySummRate(FigureSkating* arr, SkaterOnSummRate* indexArray, int records)
+{
+	cout << "Массив, отсортированный по уменьшению суммы баллов за КП и ПП." << endl;
+	cout << "Имя" << "   |   " << "Фамилия" << "   |   " << "Страна" << "   |   " << "Возраст" << "   |   " << "Короткая программа" << "   |   " << "Произвольная программа" << endl;
+	for (int i = 0; i < records; i++) {
+		Print(arr[indexArray[i].FullNum]);
+	}
+}
+
+// Вывод массива данных в консоль в порядке ввода
+void Print(FigureSkating* arr, int records)
+{
+	cout << "Имя" << "   |   " << "Фамилия" << "   |   " << "Страна" << "   |   " << "Возраст" << "   |   " << "Короткая программа" << "   |   " << "Произвольная программа" << endl;
+	for (int i = 0; i < records; i++) {
+		cout << arr[i].name << "   |   " << arr[i].surname << "   |   " << arr[i].country << "   | " << arr[i].age << " лет |   " << arr[i].shortProgramRate << "   |   " << arr[i].freeScatingRate << endl;
+	}
+}
+
+// Итерационная реализация бинарного поиска по возрасту фигуриста
+int BinarySearchAgeIterative(SkaterOnAge* indexArray, int records, unsigned int findAge)
+{
+	int mid;
+	int left = 0;
+	int right = records;
+	int result = -1;
+	while (left <= right) {
+		mid = left + (right - left) / 2;
+		if (indexArray[mid].SkaterAge == findAge) {
+			result = mid;
+			left = mid + 1;
+		}
+		else if (indexArray[mid].SkaterAge < findAge) {
+			left = mid + 1;
+		}
+		else {
+			right = mid - 1;
+		}
+	}
+	return result;
+}
+
+// Рекурсивная реализация бинарного поиска по сумме баллов за КП и ПП
+int BinarySearchSummRateRecursive(SkaterOnSummRate* indexArray, int left, int right, double findSummRate)
+{
+	int mid;
+	// Элемент не найден (базовый случай)
+	if (left > right) {
+		return -1;
+	}
+	mid = left + (right - left) / 2;
+	if (indexArray[mid].SkaterSummRate == findSummRate) {
+		return mid;
+	}
+	else if (indexArray[mid].SkaterSummRate > findSummRate) {
+		return BinarySearchSummRateRecursive(indexArray, mid + 1, right, findSummRate);
+	}
+	else {
+		return BinarySearchSummRateRecursive(indexArray, left, mid - 1, findSummRate);
+	}
+}
+
+// Удаление элемента из индекса массива
+void DeleteRecordIndexArray(SkaterOnAge* &indexArrayAge, SkaterOnSummRate* &indexArraySummRate, int records, int indexDelete)
+{
+	// Создаём массив меньшей длины
+	SkaterOnAge* newIndexArrayAge = new SkaterOnAge[records];
+	// Копируем элементы до удаляемого
+	for (int i = 0; i < indexDelete; i++) {
+		newIndexArrayAge[i] = indexArrayAge[i];
+	}
+	// Копируем элементы после удаляемого
+	for (int i = indexDelete + 1; i < records; i++) {
+		newIndexArrayAge[i - 1] = indexArrayAge[i];
+	}
+	indexArrayAge = newIndexArrayAge;
+
+	// Сделаем всё то же самое для индекса массива суммы баллов за КП и ПП
+	SkaterOnSummRate* newIndexArraySummRate = new SkaterOnSummRate[records];
+	for (int i = 0; i < indexDelete; i++) {
+		newIndexArraySummRate[i] = indexArraySummRate[i];
+	}
+	for (int i = indexDelete + 1; i < records; i++) {
+		newIndexArraySummRate[i - 1] = indexArraySummRate[i];
+	}
+	indexArraySummRate = newIndexArraySummRate;
+}
+
+// Удаление данных из массива с информацией о фигуристах
+void DeleteRecord(FigureSkating* &arr, SkaterOnAge* &indexArrayAge, SkaterOnSummRate* &indexArraySummRate, int &records, int indexDelete)
+{
+	if (indexDelete < 0 || indexDelete >= records) {
+		cout << "Номер элемента вышел за пределы массива! Удаление элемента не выполнено!" << endl;
+	}
+	else {
+		// Создаём массив меньшей длины
+		FigureSkating* newArray = new FigureSkating[records - 1];
+		// Копируем элементы до удаляемого
+		for (int i = 0; i < indexDelete; i++) {
+			newArray[i] = arr[i];
+		}
+		// Копируем элементы после удаляемого
+		for (int i = indexDelete + 1; i < records; i++) {
+			newArray[i - 1] = arr[i];
+		}
+		records--;
+		DeleteRecordIndexArray(indexArrayAge, indexArraySummRate, records, indexDelete);
+		arr = newArray;
+		cout << "Запись была успешно удалена." << endl;
+	}
+}
+
+// Редактирование записи в массиве данных
+void EditRecord(FigureSkating* &arr, SkaterOnAge* indexArrayAge, SkaterOnSummRate* indexArraySummRate, int records, int indexEdit)
+{
+	FigureSkating newStructure = StructureInput();
+	arr[indexEdit] = newStructure;
+	for (int i = 0; i < records; i++) {
+		if (indexArrayAge[i].FullNum == indexEdit) {
+			indexArrayAge[i].SkaterAge = newStructure.age;
+			indexArrayAge = IncreasingValueBubbleSortIndexArrayGivenAge(indexArrayAge, records);
+		}
+	}
+	for (int i = 0; i < records; i++) {
+		if (indexArraySummRate[i].FullNum == indexEdit) {
+			indexArraySummRate[i].SkaterSummRate = newStructure.shortProgramRate + newStructure.freeScatingRate;
+			indexArraySummRate = DecreasingValueImplementationSortIndexArrayCountSummRate(indexArraySummRate, records);
+		}
+	}
+	cout << "Данные были обновлены." << endl;
+}
+
+// Основная функция программы
+int main()
+{
+	// Использование кодировки utf-8
+	SetConsoleOutputCP(65001);
+	SetConsoleCP(65001);
+
+	// Двумерный массив для хранения данных
+	FigureSkating* arr = {};
+	
+	// Переменная для хранения длины массива данных
+	int records = 0;
+
+	SkaterOnAge* indexArrayOnAge = {};
+	SkaterOnSummRate* indexArrayOnCountSummRate = {};
+	int findIndexBinarySearchAge = -1;
+	int findIndexBinarySearchSummRate = -1;
+	// Проверка, были ли отсортированы и созданы индекс-массивы
+	bool flgSortedAge = false;
+	bool flgSortedSummRate = false;
+
+	// Интерфейс выбора: 1) ввод значений из консоли; 2) ввод данных из файла; 3) вывод данных в файл; 4) вывод данных в консоль.
+	int checkEnd = false;
+	while (!checkEnd) 
+	{
+		cout << "Выберите номер желаемого действия:" << endl << "1) Ввод с клавиатуры из консоли;" << endl << "2) Ввод данных из файла;" << endl << "3) Вывод данных в файл;" << endl << "4) Вывод данных в консоль;" << endl << "5) Вывод отсортированных данных в консоль;" << endl << "6) Выполнить бинарный поиск отсортированных данных;" << endl << "7) Изменить запись по номеру строки;" << endl << "8) Удалить запись по номеру строки;" << endl << "0) Завершить выполнение программы." << endl;
+		int enterValueChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+		switch (enterValueChoice)
+		{
+		case 1:
+		{
+			// Ввод массива из консоли
+			records = IntInput("Введите количество записей.", "Некорректное количество записей!");
+			arr = ArrayConsoleInput(records);
+			break;
+		}
+		case 2:
+		{
+			// Ввод данных из файла
+			ReadFile(arr, records);
+			break;
+		}
+		case 3:
+		{
+			// Интерфейс выбора: 1) создание нового файла; 2) дополнение новыми записями существующего файла – записи добавляются в конец файла.
+			cout << "Выберите способ записи в файл:" << endl << "1) Создание нового файла;" << endl << "2) Дополнение новыми записями существующего файла – записи добавляются в конец файла." << endl;
+			int updateFileChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+			switch (updateFileChoice)
+			{
+			case 1:
+				CreateNewFile();
+				break;
+			case 2:
+				AddToFile();
+				break;
+			default: break;
+			}
+			break;
+		}
+		case 4:
+		{
+			// Вывод массива в консоль
+			if (arr == nullptr) {
+				cout << "Выберите пункт 1 или 2 и создайте массив!";
+				break;
+			}
+			else {
+				Print(arr, records);
+				break;
+			}
+		}
+		case 5:
+		{
+			// Интерфейс выбора: 1) по возрастанию значений ключевых полей; 2) по убыванию значений ключевых полей.
+			cout << "Выберите способ сортировки:" << endl << "1) По возрастанию возраста;" << endl << "2) По уменьшению суммы баллов за КП и ПП." << endl;
+			int sortChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+			switch (sortChoice)
+			{
+			case 1:
+				indexArrayOnAge = IndexArrayGivenAge(arr, records);
+				indexArrayOnAge = IncreasingValueBubbleSortIndexArrayGivenAge(indexArrayOnAge, records);
+				PrintSortedByAge(arr, indexArrayOnAge, records);
+				flgSortedAge = true;
+				break;
+			case 2:
+				indexArrayOnCountSummRate = IndexArrayCountSummRate(arr, records);
+				indexArrayOnCountSummRate = DecreasingValueImplementationSortIndexArrayCountSummRate(indexArrayOnCountSummRate, records);
+				PrintSortedBySummRate(arr, indexArrayOnCountSummRate, records);
+				flgSortedSummRate = true;
+				break;
+			default: break;
+			}
+			break;
+		}
+		case 6:
+		{
+			// Интерфейс выбора: 1) по возрастанию значений ключевых полей; 2) по убыванию значений ключевых полей.
+			cout << "Выберите поле для бинарного поиска:" << endl << "1) Возраст;" << endl << "2) Сумма баллов за КП и ПП." << endl;
+			int binarySearchChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+			switch (binarySearchChoice)
+			{
+			case 1:
+				if (flgSortedAge) {
+					int searchAge = IntInput("Введите искомый возраст.", "Ошибка! Повторите ввод!");
+					findIndexBinarySearchAge = BinarySearchAgeIterative(indexArrayOnAge, records, searchAge);
+					if (findIndexBinarySearchAge == -1) {
+						cout << "Элемент не найден!" << endl;
+					}
+					else {
+						Print(arr[findIndexBinarySearchAge]);
+					}
+				}
+				else {
+					cout << "Для начала выберите пункт 5 и создайте индекс массивы!";
+				}
+				break;
+			case 2:
+				if (flgSortedSummRate) {
+					double searchSummRate = DoubleInput("Введите искомую сумму баллов за КП и ПП.", "Ошибка! Повторите ввод!");
+					findIndexBinarySearchSummRate = BinarySearchSummRateRecursive(indexArrayOnCountSummRate, 0, records, searchSummRate);
+					if (findIndexBinarySearchSummRate == -1) {
+						cout << "Элемент не найден!" << endl;
+					}
+					else {
+						Print(arr[findIndexBinarySearchSummRate]);
+					}
+				}
+				else {
+					cout << "Для начала выберите пункт 5 и создайте индекс массивы!";
+				}
+				break;
+			default: break;
+			}
+			break;
+		}
+		case 7:
+		{
+			int enterIndexToRewrite = IntInput("Введите номер удаляемой строки.", "Ошибка! Повторите ввод!") - 1;
+			if (flgSortedAge && flgSortedSummRate) {
+				EditRecord(arr, indexArrayOnAge, indexArrayOnCountSummRate, records, enterIndexToRewrite);
+			}
+			else {
+				cout << "Для начала выберите пункт 5 и создайте индекс массивы!";
+			}
+			break;
+		}
+		case 8:
+		{
+			int enterIndexToDelete = IntInput("Введите номер удаляемой строки.", "Ошибка! Повторите ввод!") - 1;
+			if (flgSortedAge && flgSortedSummRate) {
+				DeleteRecord(arr, indexArrayOnAge, indexArrayOnCountSummRate, records, enterIndexToDelete);
+			}
+			else {
+				cout << "Для начала выберите пункт 5 и создайте индекс массивы!";
+			}
+			break;
+		}
+		case 0:
+		{
+			cout << "Завершение работы...";
+			checkEnd = true;
+			break;
+		}
+		default: { break; }
+		}
+	}
+}
