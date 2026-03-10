@@ -1,0 +1,707 @@
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <windows.h>
+#include "Самостоятельная работа ОИТ.h"
+using namespace std;
+
+// Структура данных
+struct FigureSkating
+{
+	string surname; // фамилия
+	string name; // имя
+	string country; // страна, от которой выступает фигуристка
+	unsigned int age; // возраст
+	double shortProgramRate; // баллы за короткую программу
+	double freeScatingRate; // баллы за произвольную программу
+};
+
+// Структура данных для узла бинарного дерева
+struct Node
+{
+	unsigned int index; // индекс элемента в исходном массиве
+	double value; // значение аргумента, по которому выполняется сортировка
+	Node* left; // ссылка на левого потомка
+	Node* right; // ссылка на правого потомка
+
+	// Конструктор без параметров
+	Node() : index(0), value(0), left(nullptr), right(nullptr) {}
+
+	// Конструктор с параметром (для целого беззнакового числа - возраст фигуристки)
+	Node(unsigned int index, unsigned int value) : index(index), value(value), left(nullptr), right(nullptr) {}
+	// Конструктор с параметром (для вещественного числа - сумма баллов за КП и ПП)
+	Node(unsigned int index, double value) : index(index), value(value), left(nullptr), right(nullptr) {}
+};
+
+// Ввод целого числа
+int IntInput(string welcome, string error, string outOfRangeError = "Выберите меньшее число!")
+{
+	string strInput;
+	int intInput;
+	cout << welcome << endl;
+	cin >> strInput;
+	// Переменная для проверки корректности введённого числа для выполнения цикла 
+	bool test = false;
+	while (!test) {
+		stringstream ss(strInput);
+		// Пишем таким образом, учитывая особенность функции ss проверять возможность перевода типа и записи в переменную, пока может конвертировать тип
+		char nextElem;
+		// Преобразуем строку в int(вернёт true - если число, false - если нечисло)
+		if (ss >> intInput && intInput >= 0) {
+			// Проверяем элемент, следующий за прочитанным числом, если его нет, то в строке только число, если есть, то помимо числа есть другие символы, а значит, ввод не корректный
+			if (!(ss >> nextElem)) {
+				// Число введено корректно
+				test = true;
+				break;
+			}
+			else {
+				cout << error << " " << welcome << endl;
+				cin >> strInput;
+			}
+		}
+		else {
+			cout << error << " " << welcome << endl;
+			cin >> strInput;
+		}
+	}
+	return intInput;
+}
+
+// Ввод вещественного числа
+double DoubleInput(string welcome, string error, string outOfRangeError = "Выберите меньшее число!")
+{
+	string strInput;
+	double doubleInput;
+	cout << welcome << endl;
+	cin >> strInput;
+	// Переменная для проверки корректности введённого числа для выполнения цикла
+	bool test = false;
+	while (!test) {
+		stringstream ss(strInput);
+		// Пишем, учитывая особенность функции ss проверять возможность перевода типа и записи в переменную, пока может конвертировать тип
+		char nextElem;
+		// Преобразуем строку в double (вернёт true - если число, false - если нечисло)
+		if (ss >> doubleInput) {
+			// Проверяем элемент, следующий за прочитанным числом, если его нет, то в строке только число, если есть, то помимо числа есть другие символы, а значит, ввод не корректный
+			if (!(ss >> nextElem)) {
+				test = true;
+				break;
+			}
+			else {
+				cout << error << " " << welcome << endl;
+				cin >> strInput;
+			}
+		}
+		else {
+			cout << error << " " << welcome << endl;
+			cin >> strInput;
+		}
+	}
+	return doubleInput;
+}
+
+// Ввод строки
+string StrInput(string welcome)
+{
+	string strInput;
+	cout << welcome << endl;
+	cin >> strInput;
+	return strInput;
+}
+
+// Ввод структуры
+FigureSkating StructureInput()
+{
+	FigureSkating participant;
+	cout << "Введите данные фигуристки." << endl;
+	participant.name = StrInput("Введите имя фигуристки.");
+	participant.surname = StrInput("Введите фамилию фигуристки.");
+	participant.country = StrInput("Введите страну, которую представляет фигуристка.");
+	participant.age = IntInput("Введите возраст фигуристки (полных лет).", "Неправильный ввод!");;
+	participant.shortProgramRate = DoubleInput("Введите баллы за короткую программу.", "Неправильный ввод!");
+	participant.freeScatingRate = DoubleInput("Введите баллы за произвольную программу.", "Неправильный ввод!");
+	return participant;
+}
+
+// Ввод данных с клавиатуры в массив записей
+FigureSkating* ArrayConsoleInput(int records) {
+	// Создание массива структур данных
+	FigureSkating* arr = new FigureSkating[records];
+	for (int i = 0; i < records; i++) {
+		arr[i] = StructureInput();
+	}
+	return arr;
+}
+
+// Добавление записи в конец массива записей
+FigureSkating* AddRecord(FigureSkating participant, FigureSkating* arr, int& records)
+{
+	FigureSkating* newArray = new FigureSkating[records + 1];
+	for (int i = 0; i < records; i++) {
+		newArray[i] = arr[i];
+	}
+	newArray[records] = participant;
+	records++;
+	return newArray;
+}
+
+// Добавление записи в указанное место
+FigureSkating* AddRecord(int indexAdd, FigureSkating* arr, int& records)
+{
+	FigureSkating* newArray = new FigureSkating[records + 1];
+	for (int i = 0; i < indexAdd; i++) {
+		newArray[i] = arr[i];
+	}
+	newArray[indexAdd] = StructureInput();
+	for (int i = indexAdd; i < records; i++) {
+		newArray[i + 1] = arr[i];
+	}
+
+	records++;
+	return newArray;
+}
+
+// Удаление записи из указанного места
+FigureSkating* DeleteRecord(int indexDelete, FigureSkating* arr, int& records)
+{
+	FigureSkating* newArray = new FigureSkating[records - 1];
+	for (int i = 0; i < indexDelete; i++) {
+		newArray[i] = arr[i];
+	}
+	for (int i = indexDelete + 1; i < records; i++) {
+		newArray[i - 1] = arr[i];
+	}
+
+	records--;
+	return newArray;
+}
+
+// Ввод данных из файла
+void ReadFile(FigureSkating*& arr, int& records)
+{
+	ofstream OutFile;
+	string FileName = StrInput("Введите имя файла:");
+	// Открываем файл для записи, связав его с файлом на внешнем запоминающем устройсте:
+	ifstream InFile(FileName);
+	// Строка для ввода (считывания) строк текста из файла
+	string InLineVar;
+	// Переменная для нумерации строк, считанных из файла
+	int SN = 0;
+	// Проверяем, удалось ли открыть файл, если удалось, считываем из него в цикле текстовые строки и выводим в консоль:
+	if (InFile.is_open())
+	{
+		while (getline(InFile, InLineVar))
+		{
+			SN++;
+			cout << "Считывание строки: " << InLineVar << endl;
+			// Выделяем номер строки и текст (через разделитель -) и записываем данные без номера строки в массив записей
+			int SymbPosition = InLineVar.find("-", 1);
+			// Служебный массив строк, для считывания записи по полям через пробел
+			string* helpArr = new string[6];
+			// Записываем поток из записи
+			istringstream iss(InLineVar.substr(SymbPosition + 2));
+			for (int i = 0; i < 6; i++) {
+				// на каждое место в массиве записываем по одному полю записи, разделяя их по пробелам
+				iss >> helpArr[i];
+			}
+			// Переписываем данные в структуру FigureSkating
+			FigureSkating participant;
+			participant.name = helpArr[0];
+			participant.surname = helpArr[1];
+			participant.country = helpArr[2];
+			participant.age = stoi(helpArr[3]);
+			participant.shortProgramRate = stod(helpArr[4]);
+			participant.freeScatingRate = stod(helpArr[5]);
+			// Добавление новой записи в массив записей, переданный в функцию по ссылке
+			arr = AddRecord(participant, arr, records);
+		}
+		InFile.close();
+		cout << SN << " Данные успешно считаны." << endl;
+	}
+	else
+	{
+		cout << "Не удалось прочитать данные из файла!" << endl;
+	}
+}
+
+// Создать новый файл
+void CreateNewFile()
+{
+	ofstream OutFile;
+	string FileName = StrInput("Введите имя файла:");
+	OutFile.open(FileName);
+	FigureSkating WS;
+	int SN = 0;
+	if (OutFile.is_open())
+	{
+		do
+		{
+			// Вводим запись
+			cout << "Введите данные фигуристки." << endl;
+			WS.name = StrInput("Введите имя фигуристки. (Введите \"-\" для завершения ввода).");
+			if (WS.name == "-") {
+				break;
+			}
+			WS.surname = StrInput("Введите фамилию фигуристки.");
+			WS.country = StrInput("Введите страну, которую представляет фигуристка.");
+			WS.age = IntInput("Введите возраст фигуристки (полных лет).", "Неправильный ввод!");;
+			WS.shortProgramRate = DoubleInput("Введите баллы за короткую программу.", "Неправильный ввод!");
+			WS.freeScatingRate = DoubleInput("Введите баллы за произвольную программу.", "Неправильный ввод!");
+			SN++;
+			OutFile << SN << " - " << WS.name << " " << WS.surname << " " << WS.country << " " << WS.age << " " << WS.shortProgramRate << " " << WS.freeScatingRate << endl;
+		} while (WS.name != "-"); // Вводим, пока не будет введена строка "-"
+		OutFile.close();
+		cout << "Файл был успешно перезаписан - " << SN << " строк." << endl;
+	}
+	else
+	{
+		cout << "Файл не был перезаписан!" << endl;
+	}
+}
+
+// Добавить информацию в файл
+void AddToFile()
+{
+	ofstream OutFile;
+	string FileName = StrInput("Введите имя файла:");
+	// Открываем файл для добавления записи в конец файла (режим ios::app), связав его с файлом на внешнем запоминающем устройсте:
+	OutFile.open(FileName, ios::app);
+	// Строка для ввода текста для заполнения файла
+	FigureSkating WS;
+	// Переменная для нумерации строк
+	int SN = 0;
+	if (OutFile.is_open())
+	{
+		do
+		{
+			// Вводим запись
+			cout << "Введите данные фигуристки." << endl;
+			WS.name = StrInput("Введите имя фигуристки. (Введите \"-\" для завершения ввода).");
+			if (WS.name == "-") {
+				break;
+			}
+			WS.surname = StrInput("Введите фамилию фигуристки.");
+			WS.country = StrInput("Введите страну, которую представляет фигуристка.");
+			WS.age = IntInput("Введите возраст фигуристки (полных лет).", "Неправильный ввод!");;
+			WS.shortProgramRate = DoubleInput("Введите баллы за короткую программу.", "Неправильный ввод!");
+			WS.freeScatingRate = DoubleInput("Введите баллы за произвольную программу.", "Неправильный ввод!");
+			SN++;
+			OutFile << SN << " - " << WS.name << " " << WS.surname << " " << WS.country << " " << WS.age << " " << WS.shortProgramRate << " " << WS.freeScatingRate << endl;
+		} while (WS.name != "-"); // Вводим, пока не будет введена строка "-"
+		OutFile.close();
+		cout << "Файл был успешно перезаписан - " << SN << " строк." << endl;
+	}
+	else
+	{
+		cout << "Файл не был перезаписан!" << endl;
+	}
+}
+
+// Вывод данных о фигуристе в консоль
+void Print(FigureSkating participant)
+{
+	cout << participant.name << "   |   " << participant.surname << "   |   " << participant.country << "   | " << participant.age << " лет |   " << participant.shortProgramRate << "   |   " << participant.freeScatingRate << endl;
+}
+
+// Вывод массива данных в консоль в порядке ввода
+void Print(FigureSkating* arr, int records)
+{
+	cout << "Имя" << "   |   " << "Фамилия" << "   |   " << "Страна" << "   |   " << "Возраст" << "   |   " << "Короткая программа" << "   |   " << "Произвольная программа" << endl;
+	for (int i = 0; i < records; i++) {
+		cout << arr[i].name << "   |   " << arr[i].surname << "   |   " << arr[i].country << "   | " << arr[i].age << " лет |   " << arr[i].shortProgramRate << "   |   " << arr[i].freeScatingRate << endl;
+	}
+}
+
+// Создание бинарного дерева С УЧЁТОМ ПОВТОРЯЮЩИХСЯ элементов по невычислимому атрибуту (возраст)
+Node* CreateBinaryTreeAge(FigureSkating* arr, int records)
+{
+	// Проверка на пустой массив
+	if (records < 0 || arr == nullptr) { return nullptr; }
+	// Задаём первое значение списка в качестве корня дерева
+	Node* root = new Node(0, arr[0].age);
+	for (int i = 1; i < records; i++)
+	{
+		// Задаём отдельную переменную для просмотра предыдущего узла (чтобы не терять корень дерева)
+		Node* prev = root;
+		// Переменная для хранения текущего элемента (очередной записи в массиве)
+		Node* curr = new Node(i, arr[i].age);
+		// Проверка на вставку текущего узла на свободное место, пока ложь - элемент не вставлен
+		bool done = false;
+		while (!done)
+		{
+			// Если текущее значение меньше родительского, то вставляем его слева при первой возможности, 
+			// иначе - идём по дереву влево
+			if (curr->value < prev->value) {
+				if (prev->left == nullptr) {
+					prev->left = curr;
+					done = true;
+				}
+				else {
+					prev = prev->left;
+				}
+			}
+			// Если текущее значение больше родительского, то вставляем его справа при первой возможности, 
+			// иначе - идём по дереву вправо
+			else if (curr->value > prev->value) {
+				if (prev->right == nullptr) {
+					prev->right = curr;
+					done = true;
+				}
+				else {
+					prev = prev->right;
+				}
+			}
+			// Если текущее значение равно родительскому, то смотрим на алфавитный порядок фамилии, 
+			// а затем имени и вставляем по аналогии с предыдущей логикой на свободное место, 
+			// только теперь уже по другому атрибуту
+			else {
+				if (arr[curr->index].surname + arr[curr->index].name < arr[prev->index].surname + arr[prev->index].name) {
+					if (prev->left == nullptr) {
+						prev->left = curr;
+						done = true;
+					}
+					else {
+						prev = prev->left;
+					}
+				}
+				else {
+					if (prev->right == nullptr) {
+						prev->right = curr;
+						done = true;
+					}
+					else {
+						prev = prev->right;
+					}
+				}
+			}
+		}
+	}
+	return root;
+}
+
+// Создание бинарного дерева БЕЗ учёта ПОВТОРЯЮЩИХСЯ элементов по вычислимому атрибуту (сумма баллов)
+Node* CreateBinaryTreeSummRate(FigureSkating* arr, int records)
+{
+	// Проверка на пустой массив
+	if (records < 0 || arr == nullptr) { return nullptr; }
+	// Задаём первое значение списка в качестве корня дерева
+	Node* root = new Node(0, arr[0].shortProgramRate + arr[0].freeScatingRate);
+	for (int i = 1; i < records; i++)
+	{
+		// Задаём отдельную переменную для просмотра предыдущего узла (чтобы не терять корень дерева)
+		Node* prev = root;
+		// Переменная для хранения текущего элемента (очередной записи в массиве)
+		Node* curr = new Node(i, arr[i].shortProgramRate + arr[i].freeScatingRate);
+		// Проверка на вставку текущего узла на свободное место, пока ложь - элемент не вставлен
+		bool done = false;
+		while (!done)
+		{
+			// Если текущее значение меньше родительского, то вставляем его слева при первой возможности, 
+			// иначе - идём по дереву влево
+			if (curr->value < prev->value) {
+				if (prev->left == nullptr) {
+					prev->left = curr;
+					done = true;
+				}
+				else {
+					prev = prev->left;
+				}
+			}
+			// Если текущее значение больше родительского, то вставляем его справа при первой возможности, 
+			// иначе - идём по дереву вправо
+			else if (curr->value > prev->value) {
+				if (prev->right == nullptr) {
+					prev->right = curr;
+					done = true;
+				}
+				else {
+					prev = prev->right;
+				}
+			}
+			// При возможном равенстве значений вставляем направо
+			else {
+				if (prev->right == nullptr) {
+					prev->right = curr;
+					done = true;
+				}
+				else {
+					prev = prev->right;
+				}
+			}
+		}
+	}
+	return root;
+}
+
+// Вывод бинарного дерева по возрастанию
+void RecurrentIncreaseReadBinaryTree(FigureSkating* arr, Node* root)
+{
+	// Базовый случай: если дошли до конца ветки
+	if (root == nullptr) {
+		return;
+	}
+	// Спускаемся максимально влево
+	RecurrentIncreaseReadBinaryTree(arr, root->left);
+	// На развороте рекурсии выводим значения
+	Print(arr[root->index]);
+	// Спускаемся максимально вниз вправо
+	RecurrentIncreaseReadBinaryTree(arr, root->right);
+}
+
+// Вывод бинарного дерева по убыванию
+void RecurrentDecreaseReadBinaryTree(FigureSkating* arr, Node* root)
+{
+	// Базовый случай: если дошли до конца ветки
+	if (root == nullptr) {
+		return;
+	}
+	// Спускаемся максимально вправо
+	RecurrentDecreaseReadBinaryTree(arr, root->right);
+	// На развороте рекурсии выводим значения
+	Print(arr[root->index]);
+	// Спускаемся максимально вниз влево
+	RecurrentDecreaseReadBinaryTree(arr, root->left);
+}
+
+// Поиск по невычислимому атрибуту (возраст) вывод ВСЕХ значений с заданным атрибутом
+// Рекуррентная реализация
+bool RecurrentSearchAgeBinaryTree(FigureSkating* arr, Node* root, unsigned int searchAge, bool found = false)
+{
+	if (root == nullptr) {
+		return found;
+	}
+	RecurrentSearchAgeBinaryTree(arr, root->left, searchAge, found);
+
+	// Пройти ещё раз в поисках равных элементов со своевременным выходом, не обходя всё дерево полностью
+	if (root->value == searchAge) {
+		Print(arr[root->index]);
+		found = true;
+	}
+	else if (searchAge > root->value) {
+		found = true;
+	}
+
+	RecurrentSearchAgeBinaryTree(arr, root->right, searchAge, found);
+}
+
+// Поиск по невычислимому атрибуту (возраст) вывод одного значения с заданным атрибутом
+// Итерационная реализация
+bool IterativeSearchSummRateBinaryTree(FigureSkating* arr, Node* root, double searchSummRate)
+{
+	// Пока не дошли до нижнего элемента дерева
+	while (root != nullptr) {
+		// Если искомое значение меньше текущего, то спускаемся ниже по левой ссылке
+		if (searchSummRate < root->value) {
+			root = root->left;
+		}
+		// Если искомое значение больше текущего, то спускаемся ниже по правой ссылке
+		else if (searchSummRate > root->value) {
+			root = root->right;
+		}
+		// Иначе - элемент найден, выводим по индексу исходную запись из массива
+		else {
+			Print(arr[root->index]);
+			return true; // возвращаем истину, так как в дальнейшем проверяем отсортированность массива
+		}
+	}
+	return false; // возвращаем ложь, так как в дальнейшем проверяем отсортированность массива
+}
+
+// Основная функция программы
+int main()
+{
+	// Использование кодировки utf-8
+	SetConsoleOutputCP(65001);
+	SetConsoleCP(65001);
+
+	// Двумерный массив для хранения данных
+	FigureSkating* arr = {};
+
+	// Переменная для хранения длины массива данных
+	int records = 0;
+
+	// Переменные для хранения ссылок на бинарные деревья
+	Node* rootAge = {};
+	Node* rootSummRate = {};
+
+	// Интерфейс выбора действия
+	int checkEnd = false;
+	while (!checkEnd)
+	{
+		cout << "Выберите номер желаемого действия:" << endl <<
+			"1) Ввод с клавиатуры из консоли;" << endl <<
+			"2) Ввод данных из файла;" << endl <<
+			"3) Вывод данных в файл;" << endl <<
+			"4) Вывод данных в консоль;" << endl <<
+			"5) Построить и вывести бинарное дерево по возрасту (невычислимый атрибут);" << endl <<
+			"6) Построить и вывести бинарное дерево по сумме баллов за КП и ПП (вычислимый атрибут);" << endl <<
+			"7) Построить бинарное дерево и найти всех фигуристок заданного возраста;" << endl <<
+			"8) Построить бинарное дерево и найти фигуристку с заданной суммой баллов;" << endl <<
+			"9) Удалить запись из массива и из бинарного дерева;" << endl <<
+			"10) Редактировать запись;" << endl <<
+			"11) Добавить запись;" << endl <<
+			"0) Завершить выполнение программы." << endl;
+		int enterValueChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+		switch (enterValueChoice)
+		{
+		case 1:
+		{
+			// Ввод массива из консоли
+			records = IntInput("Введите количество записей.", "Некорректное количество записей!");
+			arr = ArrayConsoleInput(records);
+			break;
+		}
+		case 2:
+		{
+			// Ввод данных из файла
+			ReadFile(arr, records);
+			break;
+		}
+		case 3:
+		{
+			// Интерфейс выбора: 1) создание нового файла; 
+			// 2) дополнение новыми записями существующего файла – записи добавляются в конец файла.
+			cout << "Выберите способ записи в файл:" << endl <<
+				"1) Создание нового файла;" << endl <<
+				"2) Дополнение новыми записями существующего файла – записи добавляются в конец файла." << endl;
+			int updateFileChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+			switch (updateFileChoice)
+			{
+			case 1:
+				CreateNewFile();
+				break;
+			case 2:
+				AddToFile();
+				break;
+			default: break;
+			}
+			break;
+		}
+		case 4:
+		{
+			// Вывод массива в консоль
+			if (arr == nullptr) {
+				cout << "Выберите пункт 1 или 2 и создайте массив!";
+				break;
+			}
+			else {
+				Print(arr, records);
+				break;
+			}
+		}
+		case 5:
+		{
+			// Интерфейс выбора: 1) вывод по возрастанию; 
+			// 2) вывод по убыванию.
+			cout << "Выберите способ вывода отсортированного массива данных:" << endl <<
+				"1) Вывод по возрастанию;" << endl <<
+				"2) Вывод по убыванию." << endl;
+			int printSortedArrayChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+			rootAge = CreateBinaryTreeAge(arr, records);
+			switch (printSortedArrayChoice)
+			{
+			case 1:
+				RecurrentIncreaseReadBinaryTree(arr, rootAge);
+				break;
+			case 2:
+				RecurrentDecreaseReadBinaryTree(arr, rootAge);
+				break;
+			default: break;
+			}
+			break;
+		}
+		case 6:
+		{
+			// Интерфейс выбора: 1) вывод по возрастанию; 
+			// 2) вывод по убыванию.
+			cout << "Выберите способ вывода отсортированного массива данных:" << endl <<
+				"1) Вывод по возрастанию;" << endl <<
+				"2) Вывод по убыванию." << endl;
+			int printSortedArrayChoice = IntInput("Введите номер действия, которое необходимо выполнить.", "Некорректный номер!");
+			rootSummRate = CreateBinaryTreeSummRate(arr, records);
+			switch (printSortedArrayChoice)
+			{
+			case 1:
+				RecurrentIncreaseReadBinaryTree(arr, rootSummRate);
+				break;
+			case 2:
+				RecurrentDecreaseReadBinaryTree(arr, rootSummRate);
+				break;
+			default: break;
+			}
+			break;
+		}
+		case 7:
+		{
+			unsigned int searchAge = IntInput("Введите искомый элемент.", "Ошибка! Введите искомый элемент ещё раз!");
+			rootAge = CreateBinaryTreeAge(arr, records);
+			if (!RecurrentSearchAgeBinaryTree(arr, rootAge, searchAge)) {
+				cout << "Элемент не найден!" << endl;
+			}
+			else {};
+			break;
+		}
+		case 8:
+		{
+			double searchSummRate = DoubleInput("Введите искомый элемент.", "Ошибка! Введите искомый элемент ещё раз!");
+			rootSummRate = CreateBinaryTreeSummRate(arr, records);
+			if (!IterativeSearchSummRateBinaryTree(arr, rootSummRate, searchSummRate)) {
+				cout << "Элемент не найден!" << endl;
+			}
+			else {};
+			break;
+		}
+		case 9:
+		{
+			int indexDelete = IntInput("Введите номер удаляемой строки из массива.", "Ошибка! Неверный формат номера!") - 1;
+			if (indexDelete >= 0 && indexDelete < records) {
+				arr = DeleteRecord(indexDelete, arr, records);
+				rootAge = CreateBinaryTreeAge(arr, records);
+				rootSummRate = CreateBinaryTreeSummRate(arr, records);
+				cout << "Элемент успешно удалён!" << endl;
+			}
+			else {
+				cout << "Нет строки с таким номером!" << endl;
+			}
+			break;
+		}
+		case 10:
+		{
+			int indexEdit = IntInput("Введите номер редактируемой строки.", "Ошибка! Неверный формат номера!") - 1;
+			if (indexEdit >= 0 && indexEdit < records) {
+				arr[indexEdit] = StructureInput();
+				rootAge = CreateBinaryTreeAge(arr, records);
+				rootSummRate = CreateBinaryTreeSummRate(arr, records);
+				cout << "Элемент успешно изменён!" << endl;
+			}
+			else {
+				cout << "Нет строки с таким номером!" << endl;
+			}
+			break;
+		}
+		case 11:
+		{
+			int indexAdd = IntInput("Введите номер вводимой строки.", "Ошибка! Неверный формат номера!") - 1;
+			if (indexAdd >= 0 && indexAdd < records) {
+				arr = AddRecord(indexAdd, arr, records);
+				rootAge = CreateBinaryTreeAge(arr, records);
+				rootSummRate = CreateBinaryTreeSummRate(arr, records);
+				cout << "Элемент успешно добавлен!" << endl;
+			}
+			else {
+				cout << "Нет строки с таким номером!" << endl;
+			}
+			break;
+		}
+		case 0:
+		{
+			cout << "Завершение работы...";
+			checkEnd = true;
+			break;
+		}
+		default: { break; }
+		}
+	}
+	return 0;
+}
