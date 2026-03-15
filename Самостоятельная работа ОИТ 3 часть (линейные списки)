@@ -20,8 +20,8 @@ struct FigureSkating
 // Структура линейного списка
 struct Elem
 {
-	FigureSkating value;
-	Elem* next;
+	FigureSkating value; // поле для хранения записи о фогуристе
+	Elem* next; // ссылка на следующий элемент списка
 
 	// Конструктор нового узла
 	Elem(FigureSkating value) : value(value), next(nullptr) {}
@@ -120,10 +120,13 @@ FigureSkating StructureInput()
 // Добавление нового элемента в линейный список
 Elem* AddNewElemLinearList(Elem* head, FigureSkating participant)
 {
+	// Переменная для хранения нового узла
 	Elem* newElem = new Elem(participant);
+	// Проверка на пустоту списка
 	if (head == nullptr) {
 		head = newElem;
 	}
+	// Вставка в начало списка (новая голова)
 	else if (participant.age < head->value.age ||
 		participant.age == head->value.age &&
 		participant.surname + participant.name < head->value.surname + head->value.name)
@@ -135,10 +138,12 @@ Elem* AddNewElemLinearList(Elem* head, FigureSkating participant)
 		Elem* curr = head;
 		bool done = false;
 		while (!done) {
+			// Вставка в конец списка
 			if (curr->next == nullptr) {
 				curr->next = newElem;
 				done = true;
 			}
+			// Проверка, куда необходимо вставить элемент, если вставлять его в середину списка
 			else if (participant.age < curr->next->value.age ||
 				participant.age == curr->next->value.age &&
 				participant.surname + participant.name < curr->next->value.surname + curr->next->value.name) {
@@ -146,6 +151,7 @@ Elem* AddNewElemLinearList(Elem* head, FigureSkating participant)
 				curr->next = newElem;
 				done = true;
 			}
+			// Сдвиг далее, если не вставляем
 			else {
 				curr = curr->next;
 			}
@@ -202,7 +208,7 @@ Elem* ReadFile(Elem* head)
 			participant.shortProgramRate = stod(helpArr[4]);
 			participant.freeScatingRate = stod(helpArr[5]);
 			delete[] helpArr;
-			// Добавление новой записи в массив записей, переданный в функцию по ссылке
+			// Добавление новой записи в линейный список, переданный в функцию по голове
 			head = AddNewElemLinearList(head, participant);
 		}
 		InFile.close();
@@ -291,12 +297,14 @@ void AddToFile()
 // Вывод данных о фигуристе в консоль
 void Print(FigureSkating participant)
 {
-	cout << participant.name << "   |   " << participant.surname << "   |   " << participant.country << "   | " << participant.age << " лет |   " << participant.shortProgramRate << "   |   " << participant.freeScatingRate << endl;
+	cout << participant.name << "   |   " << participant.surname << "   |   " << participant.country << "   | " <<
+		participant.age << " лет |   " << participant.shortProgramRate << "   |   " << participant.freeScatingRate << endl;
 }
 
 // Вывод линейного списка в консоль по возрастанию/неубыванию
 void PrintIncreasedLinearList(Elem* head)
 {
+	// Пока не дошли до конца списка, выводим значения в узлах
 	while (head != nullptr) {
 		Print(head->value);
 		head = head->next;
@@ -306,6 +314,7 @@ void PrintIncreasedLinearList(Elem* head)
 // Вывод линейного списка в консоль по убыванию/невозрастанию
 void PrintDecreasedLinearList(Elem* head)
 {
+	// Базовый случай - дошли до конца списка
 	if (head == nullptr) {
 		return;
 	}
@@ -316,8 +325,12 @@ void PrintDecreasedLinearList(Elem* head)
 // Итерационный алгоритм поиска по возрасту
 bool IterativeSearchElem(Elem* head, unsigned int findAge)
 {
+	// Переменная для отметки того, что найден хотя бы один элемент
 	bool found = false;
+	// Пока не дошли до конца списка
 	while (head != nullptr) {
+		// Останавливаем проход по списку, 
+		// если вывели все элементы с искомым значением атрибута
 		if (head->value.age > findAge) {
 			break;
 		}
@@ -336,6 +349,7 @@ bool IterativeSearchElem(Elem* head, unsigned int findAge)
 // Рекурсивный алгоритм поиска по возрасту
 bool RecursiveSearchElem(Elem* head, unsigned int findAge, bool found = false)
 {
+	// Базовый случай - дошли до конца списка
 	if (head == nullptr) {
 		return found;
 	}
@@ -353,12 +367,17 @@ bool RecursiveSearchElem(Elem* head, unsigned int findAge, bool found = false)
 Elem* DeleteElem(Elem* head, unsigned int deleteElem)
 {
 	bool ifDeleted = false;
+	// Проверяем отдельно ситуацию, когда в списке только 1 элемент - его голова
 	Elem* curr = head;
 	if (head->value.age == deleteElem && head->next == nullptr) {
 		head = nullptr;
 		ifDeleted = true;
 	}
+	// В цикле проверяем, является ли следующий элемент пустым, 
+	// для того, чтобы при удовлетворении условия, можно было удалить следующий за ним, 
+	// перепривязав ссылку текущего на ссылку через один от него
 	while (curr->next != nullptr) {
+		// Замена головы списка в случае, если нужно удалить один или несколько первых элементов
 		if (head != nullptr && head->value.age == deleteElem) {
 			Elem* currHead = head;
 			head = head->next;
@@ -376,6 +395,7 @@ Elem* DeleteElem(Elem* head, unsigned int deleteElem)
 			curr = curr->next;
 		}
 	}
+	// Проверка, был ли удаляемый элемент изначально
 	if (ifDeleted) {
 		cout << "Элемент успешно удалён." << endl;
 	}
